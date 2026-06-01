@@ -1,0 +1,62 @@
+name: Build OpenWrt SDK packages
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: OpenWrt ${{ matrix.openwrt_version }} ${{ matrix.target }}/${{ matrix.subtarget }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - openwrt_version: 23.05.5
+            target: mediatek
+            subtarget: filogic
+            package_arch: aarch64_cortex-a53
+          - openwrt_version: 24.10.3
+            target: mediatek
+            subtarget: filogic
+            package_arch: aarch64_cortex-a53
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install host dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            clang \
+            curl \
+            file \
+            gawk \
+            gettext \
+            git \
+            libncurses-dev \
+            python3 \
+            rsync \
+            tar \
+            unzip \
+            wget \
+            xz-utils \
+            zstd
+
+      - name: Build packages with OpenWrt SDK
+        env:
+          OPENWRT_VERSION: ${{ matrix.openwrt_version }}
+          OPENWRT_TARGET: ${{ matrix.target }}
+          OPENWRT_SUBTARGET: ${{ matrix.subtarget }}
+          PACKAGE_ARCH: ${{ matrix.package_arch }}
+        run: bash scripts/build-openwrt-sdk.sh
+
+      - name: Upload IPK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: happ-openwrt-${{ matrix.openwrt_version }}-${{ matrix.target }}-${{ matrix.subtarget }}-${{ matrix.package_arch }}
+          path: bin/openwrt-${{ matrix.openwrt_version }}-${{ matrix.target }}-${{ matrix.subtarget }}-${{ matrix.package_arch }}/*.ipk
+          if-no-files-found: error
