@@ -24,9 +24,12 @@ define Package/happ-openwrt/conffiles
 endef
 
 define Build/Prepare
-	$(call Build/Prepare/Default)
-	$(CP) ./cmd $(PKG_BUILD_DIR)/
+	mkdir -p $(PKG_BUILD_DIR)
+	$(CP) ./cmd $(PKG_BUILD_DIR)/ 2>/dev/null || true
+	$(CP) ./internal $(PKG_BUILD_DIR)/ 2>/dev/null || true
+	$(CP) ./pkg $(PKG_BUILD_DIR)/ 2>/dev/null || true
 	$(CP) ./go.mod $(PKG_BUILD_DIR)/
+	$(CP) ./go.sum $(PKG_BUILD_DIR)/ 2>/dev/null || true
 endef
 
 define Build/Compile
@@ -35,7 +38,7 @@ define Build/Compile
 		GOOS=linux \
 		GOARCH=arm64 \
 		CGO_ENABLED=0 \
-		go build -trimpath -ldflags="-s -w" -o happ-openwrt ./cmd/happ-openwrt
+		go build -mod=mod -trimpath -ldflags="-s -w" -o happ-openwrt ./cmd/happ-openwrt
 endef
 
 define Package/happ-openwrt/install
